@@ -50,7 +50,7 @@ int register = 0x0000;
 int readLength = 256;
             
 ByteBuffer bufferOut = ByteBuffer.allocateDirect(2);
-bufferOut.put((byte)((register << 8) & 0xff));
+bufferOut.put((byte)((register >> 8) & 0xff));
 bufferOut.put((byte)(register & 0xff));
 ByteBuffer bufferIn = ByteBuffer.allocateDirect(readLength);
 i2c.transmit(deviceAddress, bufferOut, bufferIn);
