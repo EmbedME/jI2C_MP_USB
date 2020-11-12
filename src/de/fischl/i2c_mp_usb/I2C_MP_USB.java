@@ -39,6 +39,7 @@ public class I2C_MP_USB {
     protected static final int I2C_M_RD = 0x01;
     protected static final int CMD_START_BOOTLOADER = 0x10;
     protected static final int CMD_SET_BAUDRATE = 0x11;
+    protected static final int CMD_GET_STATUS = 3;
 
     
     /** timeout for libusb actions */
@@ -91,7 +92,56 @@ public class I2C_MP_USB {
 
         if (transfered < 0) throw new I2C_MP_USBException("Set baudrate failed");
     }
-    
+
+    /**
+     * Probe given address if a device answers
+     * 
+     * @param deviceAddress I2C device address
+     * @return True if device answers
+     * @throws I2C_MP_USBException Error while probing device
+     */
+    public boolean probeDevice(int deviceAddress) throws I2C_MP_USBException {    
+
+        int transfered;
+        ByteBuffer buffer = ByteBuffer.allocateDirect(0);
+
+        // Decision whether to read or write like i2cdetect does
+        if ((deviceAddress >= 0x30 && deviceAddress <= 0x37) ||
+            (deviceAddress >= 0x50 && deviceAddress <= 0x5F)) {
+
+            // read
+            transfered = LibUsb.controlTransfer(handle, 
+                (byte) (LibUsb.ENDPOINT_IN | LibUsb.REQUEST_TYPE_CLASS),
+                (byte) (CMD_I2C_IO + CMD_I2C_IO_BEGIN + CMD_I2C_IO_END),
+                (short) I2C_M_RD,
+                (short) deviceAddress,
+                buffer, timeout);
+
+        } else {
+
+            // write
+            transfered = LibUsb.controlTransfer(handle, 
+                (byte) (LibUsb.ENDPOINT_OUT | LibUsb.REQUEST_TYPE_CLASS),
+                (byte) (CMD_I2C_IO + CMD_I2C_IO_BEGIN + CMD_I2C_IO_END),
+                (short) 0x00,
+                (short) deviceAddress,
+                buffer, timeout);
+        }
+
+        // get status
+        ByteBuffer bufferIn = ByteBuffer.allocateDirect(1);
+        transfered = LibUsb.controlTransfer(handle, 
+            (byte) (LibUsb.ENDPOINT_IN | LibUsb.REQUEST_TYPE_CLASS),
+            (byte) (CMD_GET_STATUS),
+            (short) 0x00,
+            (short) 0x00,
+            bufferIn, timeout);
+
+        if (transfered < 0) throw new I2C_MP_USBException("Probe device failed");
+
+        return bufferIn.get(0) == 1;
+    }
+     
     /**
      * Jump to bootloader.
      * 
