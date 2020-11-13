@@ -103,13 +103,13 @@ public class I2C_MP_USB {
     public boolean probeDevice(int deviceAddress) throws I2C_MP_USBException {    
 
         int transfered;
-        ByteBuffer buffer = ByteBuffer.allocateDirect(0);
 
         // Decision whether to read or write like i2cdetect does
         if ((deviceAddress >= 0x30 && deviceAddress <= 0x37) ||
             (deviceAddress >= 0x50 && deviceAddress <= 0x5F)) {
 
             // read
+            ByteBuffer buffer = ByteBuffer.allocateDirect(1);
             transfered = LibUsb.controlTransfer(handle, 
                 (byte) (LibUsb.ENDPOINT_IN | LibUsb.REQUEST_TYPE_CLASS),
                 (byte) (CMD_I2C_IO + CMD_I2C_IO_BEGIN + CMD_I2C_IO_END),
@@ -120,6 +120,7 @@ public class I2C_MP_USB {
         } else {
 
             // write
+            ByteBuffer buffer = ByteBuffer.allocateDirect(0);
             transfered = LibUsb.controlTransfer(handle, 
                 (byte) (LibUsb.ENDPOINT_OUT | LibUsb.REQUEST_TYPE_CLASS),
                 (byte) (CMD_I2C_IO + CMD_I2C_IO_BEGIN + CMD_I2C_IO_END),
